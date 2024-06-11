@@ -21,7 +21,7 @@ jinja_compiled_template = jinja_env.from_string(format_template)
 messages = [
     {'role': 'system',  'content': 'You speak like a pirate.'},
     {'role': 'user', 'content': 'Can you teach me to swim?'},
-    {'role': 'assistant', 'content': 'Sure thing, matey! Then ye go swim with the shark by the ship, won\'t ya?'}
+    {'role': 'assistant', 'content': 'Sure thing, matey! Then ye go swim with the shark.'}
 ]
 
 text = jinja_compiled_template.render(messages=messages,
@@ -47,6 +47,9 @@ If you notice any error, please open an issue!
 - [ChatML](#chatml)
 - [Llama-3 Instruct](#llama-3-instruct)
 - [Mistral](#mistral)
+- [OpenChat 3.5](#openchat-35)
+- [OpenChat 3.5 Gemma](#openchat-35-gemma)
+- [OpenChat 3.6](#openchat-36)
 - [Phi3](#phi3)
 - [Vicuna](#vicuna)
 
@@ -156,6 +159,78 @@ https://huggingface.co/MaziyarPanahi/Mistral-7B-Instruct-v0.3-GGUF
 ```
 
 
+
+
+## OpenChat 3.5
+
+https://huggingface.co/TheBloke/openchat_3.5-GGUF
+
+```
+{{ bos_token }}
+{% for message in messages %}
+  {{ 'GPT4 Correct ' + message['role'].title() + ': ' + message['content'].strip() + '<|end_of_turn|>'}}
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ 'GPT4 Correct Assistant:' }}
+{% endif %}
+```
+
+
+## OpenChat 3.5 Gemma
+
+https://huggingface.co/bartowski/openchat-3.5-0106-gemma-GGUF
+
+```
+{{ bos_token }}
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = messages[0]['content'].strip() + '\n\n' %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = '' %}
+{% endif %}
+
+{% for message in loop_messages %}
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+  {% endif %}  
+  {% if loop.index0 == 0 %}
+    {% set content = system_message + message['content'] %}
+  {% else %}
+    {% set content = message['content'] %}
+  {% endif %}
+  
+  {{ 'GPT4 Correct ' + message['role'].title() + ': ' + content + '<end_of_turn>'}}
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ 'GPT4 Correct Assistant:' }}
+{% endif %}
+```
+
+## OpenChat 3.6
+
+https://huggingface.co/bartowski/openchat-3.6-8b-20240522-GGUF
+
+```
+{{ bos_token }}
+{% for message in messages %}
+  {% if message['role'] in ['user', 'assistant'] %}
+    {% set content = '<|start_header_id|>GPT4 Correct ' + message['role'].title() + '<|end_header_id|>\n\n' + message['content'] | trim + '<|eot_id|>' %}
+  {% elif message['role'] == 'system' %}
+    {% set content = '<|start_header_id|>System<|end_header_id|>\n\n' + message['content'] | trim + '<|eot_id|>' %}
+  {% else %}
+    {{ raise_exception('Only user, assistant and system roles are supported!') }}
+  {% endif %}
+  
+  {{ content }}
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ '<|start_header_id|>GPT4 Correct Assistant<|end_header_id|>\n\n' }}
+{% endif %}
+```
 
 
 
