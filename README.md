@@ -40,8 +40,6 @@ If you notice any error, please open an issue!
 
 
 
-
-
 ## Text Models
 
 - [ChatML](#chatml)
@@ -50,10 +48,14 @@ If you notice any error, please open an issue!
 - [OpenChat 3.5](#openchat-35)
 - [OpenChat 3.5 Gemma](#openchat-35-gemma)
 - [OpenChat 3.6](#openchat-36)
-- [Phi3](#phi3)
+- [Phi-2](#phi-2)
+- [Phi-3](#phi-3)
 - [Vicuna](#vicuna)
+- [Zephyr](#zephyr)
+- [Zephyr-gemma](#zephyr-gemma)
 
-## Text + Vision Models
+
+## Vision Models (text + image input)
 
 - [LLaVA 1.5](#llava-15)
 - [LLaVA 1.6 Mistral](#llava-16-mistral)
@@ -121,7 +123,7 @@ https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF
 ```
 
 
-# Mistral
+## Mistral
 
 https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3
 
@@ -233,10 +235,44 @@ https://huggingface.co/bartowski/openchat-3.6-8b-20240522-GGUF
 ```
 
 
+## Phi-2
+
+https://huggingface.co/TheBloke/phi-2-GGUF
+
+```
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = messages[0]['content'].strip() + '\n\n' %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = '' %}
+{% endif %}
+
+{% for message in loop_messages %}
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+  {% endif %}
+  
+  {% if loop.index0 == 0 %}
+    {% set content = system_message + message['content'] %}
+  {% else %}
+    {% set content = message['content'] %}
+  {% endif %}
+  
+  {% if message['role'] == 'user' %}
+    {{ 'Instruct: ' + content.strip() + '\n' }}
+  {% elif message['role'] == 'assistant' %}
+    {{ 'Output: '  + content.strip() + '\n' }}
+  {% endif %}
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ 'Output:' }}
+{% endif %}
+```
 
 
-
-## Phi3
+## Phi-3
 
 https://huggingface.co/microsoft/Phi-3-mini-4k-instruct
 
@@ -258,7 +294,7 @@ https://huggingface.co/microsoft/Phi-3-mini-4k-instruct
 
 
 
-# Vicuna
+## Vicuna
 
 https://huggingface.co/lmsys/vicuna-7b-v1.5
 
@@ -296,15 +332,55 @@ https://huggingface.co/TheBloke/vicuna-7B-v1.5-GGUF
 ```
 
 
+## Zephyr
+
+https://huggingface.co/TheBloke/zephyr-7B-beta-GGUF
+
+```
+{% for message in messages %}
+
+  {% if message['role'] == 'user' %}
+    {{ '<|user|>\n' + message['content'] + eos_token }}
+  {% elif message['role'] == 'system' %}
+    {{ '<|system|>\n' + message['content'] + eos_token }}
+  {% elif message['role'] == 'assistant' %}
+    {{ '<|assistant|>\n'  + message['content'] + eos_token }}
+  {% endif %}
+  
+  {% if loop.last and add_generation_prompt %}
+    {{ '<|assistant|>' }}
+  {% endif %}
+
+{% endfor %}
+```
 
 
 
 
+## Zephyr-gemma
+
+https://huggingface.co/LoneStriker/zephyr-7b-gemma-v0.1-GGUF
+
+```
+{% if messages[0]['role'] == 'user' or messages[0]['role'] == 'system' %}
+  {{ bos_token }}
+{% endif %}
+
+{% for message in messages %}
+  {{ '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n' }}
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ '<|im_start|>assistant\n' }}
+{% elif messages[-1]['role'] == 'assistant' %}
+  {{ eos_token }}
+{% endif %}"
+```
 
 
 
 
-# Text + Vision Models
+# Vision Models (text + image input)
 
 
 ## LLaVA 1.5
