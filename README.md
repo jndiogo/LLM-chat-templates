@@ -34,9 +34,17 @@ Some models were not trained with support for system/instructions message. For t
 
 The templates deal with add_generation_prompt and therefore terminate by adding the header of the next assistant message, so that the model continues from there, except when the model does not need it.
 
-Most entries list the HuggingFace link for the model or its GGUF version.
+Most entries list the HuggingFace link for the model, usually to a GGUF version.
 
-If you notice any error, please open an issue!
+These chat templates were compiled from many sources, including:
+- [HuggingFace](https://huggingface.co/) models' tokenizer_config.json files
+- https://github.com/chujiezheng/chat_templates/tree/main
+
+Some were adapted to deal with system messages and "add_generation_prompt".
+
+Most of the templates were tested, but if you notice an error, please open an issue!
+
+
 
 
 
@@ -70,6 +78,114 @@ If you notice any error, please open an issue!
 
 
 
+
+## Alpaca
+
+https://huggingface.co/TheBloke/claude2-alpaca-13B-GGUF
+
+```
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = messages[0]['content'].strip() + '\n' %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = '' %}
+{% endif %}
+
+{% for message in loop_messages %}
+
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+  {% endif %}
+  
+  {% if loop.index0 == 0 %}
+    {% set content = system_message + message['content'] %}
+  {% else %}
+    {% set content = message['content'] %}
+  {% endif %}
+  
+  {% if message['role'] == 'user' %}
+    {{ '### Instruction:\n' + content.strip() + '\n\n'}}
+  {% elif message['role'] == 'assistant' %}
+    {{ '### Response:\n'  + content.strip() + '\n\n' }}
+  {% endif %}
+  
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ '### Response:\n' }}
+{% endif %}
+``` 
+
+
+## AmberChat
+
+https://huggingface.co/TheBloke/AmberChat-GGUF
+
+```
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = messages[0]['content'].strip() + '\n' %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = '' %}
+{% endif %}
+
+{% for message in loop_messages %}
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+  {% endif %}
+  
+  {% if loop.index0 == 0 %}
+    {{ bos_token + system_message }}
+  {% endif %}
+  {% if message['role'] == 'user' %}
+    {{ '### Human: ' + message['content'].strip() + '\n' }}
+  {% elif message['role'] == 'assistant' %}
+    {{ '### Assistant: ' + message['content'].strip() + '\n' }}
+  {% endif %}
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ '### Assistant:' }}
+{% endif %}
+```
+
+## Command-R
+
+https://huggingface.co/andrewcanis/c4ai-command-r-v01-GGUF
+
+```
+{{ bos_token }}
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = messages[0]['content'] %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = false %}
+{% endif %}
+
+{% if system_message != false %}
+  {{ '<|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>' + system_message + '<|END_OF_TURN_TOKEN|>' }}
+{% endif %}
+
+{% for message in loop_messages %}
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant...') }}
+  {% endif %}
+  
+  {% set content = message['content'] %}
+  {% if message['role'] == 'user' %}
+    {{ '<|START_OF_TURN_TOKEN|><|USER_TOKEN|>' + content.strip() + '<|END_OF_TURN_TOKEN|>' }}
+  {% elif message['role'] == 'assistant' %}
+    {{ '<|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>'  + content.strip() + '<|END_OF_TURN_TOKEN|>' }}
+  {% endif %}
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ '<|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>' }}
+{% endif %}
+```
 
 
 
@@ -884,3 +1000,5 @@ https://huggingface.co/qresearch/llama-3-vision-alpha-hf
 
 {% endfor %}
 ```
+
+
