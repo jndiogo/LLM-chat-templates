@@ -51,8 +51,13 @@ Most of the templates were tested, but if you notice an error, please open an is
 ## Text Models
 
 - [ChatML](#chatml)
-- [Llama-3 Instruct](#llama-3-instruct)
+- [Command-R](#command-r)
+- [Falcon](#falcon)
+- [Gemma](#gemma)
+- [Llama-2](#llama-2)
+- [Llama-3](#llama-3)
 - [Mistral](#mistral)
+- [Mixtral](#mixtral)
 - [OpenChat 3.5](#openchat-35)
 - [OpenChat 3.5 Gemma](#openchat-35-gemma)
 - [OpenChat 3.6](#openchat-36)
@@ -202,9 +207,110 @@ https://huggingface.co/andrewcanis/c4ai-command-r-v01-GGUF
 ```
 
 
+## Falcon
+
+https://huggingface.co/maddes8cht/tiiuae-falcon-7b-instruct-gguf
+
+```
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = messages[0]['content'] %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = '' %}
+{% endif %}
+
+{% for message in loop_messages %}
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+  {% endif %}
+  
+  {% if loop.index0 == 0 %}
+    {{ system_message.strip() }}
+  {% endif %}
+  
+  {{ '\n\n' + message['role'].title() + ': ' + message['content'].strip().replace('\r\n', '\n').replace('\n\n', '\n') }}
+  
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{ '\n\nAssistant:' }}
+{% endif %}
+```
 
 
-## Llama-3 Instruct
+## Gemma
+
+https://huggingface.co/brittlewis12/gemma-7b-it-GGUF
+
+```
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = messages[0]['content'].strip() + '\n\n' %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = '' %}
+{% endif %}
+
+{% for message in loop_messages %}
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+  {% endif %}
+  
+  {% if loop.index0 == 0 %}
+    {% set content = system_message + message['content'] %}
+  {% else %}
+    {% set content = message['content'] %}
+  {% endif %}
+  
+  {% if (message['role'] == 'assistant') %}
+    {% set role = 'model' %}
+  {% else %}
+    {% set role = message['role'] %}
+  {% endif %}
+
+  {{ '<start_of_turn>' + role + '\n' + content.strip() + '<end_of_turn>\n' }}
+{% endfor %}
+
+{% if add_generation_prompt %}
+  {{'<start_of_turn>model\n'}}
+{% endif %}
+```
+
+## Llama-2
+
+https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF
+
+```
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = '<<SYS>>\n' + messages[0]['content'].strip() + '\n<</SYS>>\n\n' %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = '' %}
+{% endif %}
+
+{% for message in loop_messages %}
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+  {% endif %}
+  
+  {% if loop.index0 == 0 %}
+    {% set content = system_message + message['content'] %}
+  {% else %}
+    {% set content = message['content'] %}
+  {% endif %}
+  
+  {% if message['role'] == 'user' %}
+    {{ bos_token + '[INST] ' + content.strip() + ' [/INST]' }}
+  {% elif message['role'] == 'assistant' %}
+    {{ ' '  + content.strip() + ' ' + eos_token }}
+  {% endif %}
+{% endfor %}
+```
+
+
+## Llama-3
 
 https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF
 
@@ -241,9 +347,43 @@ https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF
 
 ## Mistral
 
-https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3
-
 https://huggingface.co/MaziyarPanahi/Mistral-7B-Instruct-v0.3-GGUF
+
+```
+{{ bos_token }}
+{% if messages[0]['role'] == 'system' %}
+  {% set loop_messages = messages[1:] %}
+  {% set system_message = messages[0]['content'].strip() + '\n\n' %}
+{% else %}
+  {% set loop_messages = messages %}
+  {% set system_message = '' %}
+{% endif %}
+
+{% for message in loop_messages %}
+
+  {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+    {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+  {% endif %}
+
+  {% if loop.index0 == 0 %}
+    {% set content = system_message + message['content'] %}
+  {% else %}
+    {% set content = message['content'] %}
+  {% endif %}
+  
+  {% if message['role'] == 'user' %}
+    {{ '[INST] ' + content.strip() + ' [/INST]' }}
+  {% elif message['role'] == 'assistant' %}
+    {{ content.strip() + eos_token}}
+  {% endif %}
+
+{% endfor %}"
+```
+
+
+# Mixtral
+
+https://huggingface.co/TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF
 
 ```
 {{ bos_token }}
@@ -1000,5 +1140,3 @@ https://huggingface.co/qresearch/llama-3-vision-alpha-hf
 
 {% endfor %}
 ```
-
-
