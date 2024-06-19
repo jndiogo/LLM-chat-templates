@@ -50,6 +50,8 @@ Most of the templates were tested, but if you notice an error, please open an is
 
 ## Text Models
 
+- [Alpaca](#alpaca)
+- [AmberChat](#amberchat)
 - [ChatML](#chatml)
 - [Command-R](#command-r)
 - [Falcon](#falcon)
@@ -63,6 +65,7 @@ Most of the templates were tested, but if you notice an error, please open an is
 - [OpenChat 3.6](#openchat-36)
 - [Phi-2](#phi-2)
 - [Phi-3](#phi-3)
+- [Qwen](#qwen)
 - [Vicuna](#vicuna)
 - [Zephyr](#zephyr)
 - [Zephyr-gemma](#zephyr-gemma)
@@ -156,6 +159,34 @@ https://huggingface.co/TheBloke/AmberChat-GGUF
 {% endif %}
 ```
 
+
+
+
+## ChatML
+
+ChatML text format is used by many models, for example:
+
+- Hermes2
+- Dolphin
+- Dolphin-phi2
+- Dolphin-coder
+- Tiny-dolphin
+- Orca2
+- Rocket
+- Stable-LM2
+- Yi-chat
+
+```
+{% for message in messages %}
+    {{'<|im_start|>' + message['role'] + '\n' + message['content'].strip() + '<|im_end|>' + '\n'}}
+{% endfor %}
+
+{% if add_generation_prompt %}
+    {{ '<|im_start|>assistant\n' }}
+{% endif %}
+```
+
+
 ## Command-R
 
 https://huggingface.co/andrewcanis/c4ai-command-r-v01-GGUF
@@ -189,20 +220,6 @@ https://huggingface.co/andrewcanis/c4ai-command-r-v01-GGUF
 
 {% if add_generation_prompt %}
   {{ '<|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>' }}
-{% endif %}
-```
-
-
-
-## ChatML
-
-```
-{% for message in messages %}
-    {{'<|im_start|>' + message['role'] + '\n' + message['content'].strip() + '<|im_end|>' + '\n'}}
-{% endfor %}
-
-{% if add_generation_prompt %}
-    {{ '<|im_start|>assistant\n' }}
 {% endif %}
 ```
 
@@ -423,6 +440,8 @@ https://huggingface.co/TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF
 
 https://huggingface.co/TheBloke/openchat_3.5-GGUF
 
+Also used in Starling-LM models.
+
 ```
 {{ bos_token }}
 {% for message in messages %}
@@ -528,6 +547,29 @@ https://huggingface.co/TheBloke/phi-2-GGUF
 ```
 
 
+## Qwen
+
+https://huggingface.co/Qwen/Qwen1.5-7B-Chat-GGUF
+
+```
+{% for message in messages %}
+  {% if loop.first and messages[0]['role'] != 'system' %}
+    {{ '<|im_start|>system\nYou are a helpful assistant<|im_end|>\n' }}
+  {% endif %}
+  
+  {{'<|im_start|>' + message['role'] + '\n' + message['content'].strip() }}
+  
+  {% if (loop.last and add_generation_prompt) or not loop.last %}
+    {{ '<|im_end|>' + '\n'}}
+  {% endif %}
+{% endfor %}
+
+{% if add_generation_prompt and messages[-1]['role'] != 'assistant' %}
+  {{ '<|im_start|>assistant\n' }}
+{% endif %}
+```
+
+
 ## Phi-3
 
 https://huggingface.co/microsoft/Phi-3-mini-4k-instruct
@@ -555,6 +597,9 @@ https://huggingface.co/microsoft/Phi-3-mini-4k-instruct
 https://huggingface.co/lmsys/vicuna-7b-v1.5
 
 https://huggingface.co/TheBloke/vicuna-7B-v1.5-GGUF
+
+Also used in Wizard-vicuna models.
+
 
 ```
 {% if messages[0]['role'] == 'system' %}
@@ -1140,3 +1185,5 @@ https://huggingface.co/qresearch/llama-3-vision-alpha-hf
 
 {% endfor %}
 ```
+
+
