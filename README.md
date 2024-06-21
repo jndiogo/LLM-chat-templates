@@ -53,7 +53,7 @@ Most of the templates were tested, but if you notice an error, please open an is
 - [Alpaca](#alpaca)
 - [AmberChat](#amberchat)
 - [ChatML](#chatml)
-- [Command-R](#command-r)
+- [Command-R and Command-R-plus](#command-r)
 - [Falcon](#falcon)
 - [Gemma](#gemma)
 - [Llama-2](#llama-2)
@@ -166,11 +166,8 @@ https://huggingface.co/TheBloke/AmberChat-GGUF
 
 ChatML text format is used by many models, for example:
 
-- Hermes2
-- Dolphin
-- Dolphin-phi2
-- Dolphin-coder
-- Tiny-dolphin
+- Hermes-2, Hermes-2-Theta-Llama-3
+- Dolphin, Dolphin-phi2, Dolphin-coder, Tiny-dolphin
 - Orca2
 - Rocket
 - Stable-LM2
@@ -189,7 +186,11 @@ ChatML text format is used by many models, for example:
 
 ## Command-R
 
+Also Command-R-plus models.
+
 https://huggingface.co/andrewcanis/c4ai-command-r-v01-GGUF
+
+https://huggingface.co/pmysl/c4ai-command-r-plus-GGUF
 
 ```
 {{ bos_token }}
